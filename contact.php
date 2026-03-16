@@ -56,5 +56,5 @@ if ($sent) {
     echo json_encode(['success' => true]);
 } else {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Unable to send message. Please call us directly at (602) 809-5941.']);
+    echo json_encode(['success' => false, 'error' => 'Unable to send message. Please call us directly at (602) 890-5941.']);
 }
