@@ -55,6 +55,17 @@ $sent = mail($to, $subject, $body, $headers);
 if ($sent) {
     echo json_encode(['success' => true]);
 } else {
+    // Log the failure outside public_html so it's never publicly accessible
+    $log_file = dirname($_SERVER['DOCUMENT_ROOT']) . '/form_errors.log';
+    $log_entry  = '[' . date('Y-m-d H:i:s') . '] mail() failed' . PHP_EOL;
+    $log_entry .= '  Name:    ' . $name . PHP_EOL;
+    $log_entry .= '  Phone:   ' . $phone . PHP_EOL;
+    $log_entry .= '  Email:   ' . ($email ?: 'Not provided') . PHP_EOL;
+    $log_entry .= '  Service: ' . $serviceType . PHP_EOL;
+    $log_entry .= '  Message: ' . ($message ?: 'None') . PHP_EOL;
+    $log_entry .= str_repeat('-', 40) . PHP_EOL;
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Unable to send message. Please call us directly at (602) 890-5941.']);
 }
