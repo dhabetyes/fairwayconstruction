@@ -56,7 +56,7 @@ if ($sent) {
     echo json_encode(['success' => true]);
 } else {
     // Log the failure outside public_html so it's never publicly accessible
-    $log_file = dirname($_SERVER['DOCUMENT_ROOT']) . '/form_errors.log';
+    $log_file = dirname($_SERVER['DOCUMENT_ROOT']) . '/logs/form_errors.log';
     $log_entry  = '[' . date('Y-m-d H:i:s') . '] mail() failed' . PHP_EOL;
     $log_entry .= '  Name:    ' . $name . PHP_EOL;
     $log_entry .= '  Phone:   ' . $phone . PHP_EOL;
