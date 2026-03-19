@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storm Lead Generator — Fairway Construction</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <h1 class="app-title">Storm Lead Generator</h1>
+      <span class="app-subtitle">Fairway Construction LLC</span>
+    </div>
+    <div class="header-right">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot"></span>
+        <span class="status-text">Initializing…</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <h2 class="sidebar-heading">Storm Alerts</h2>
+        <div class="control-group">
+          <label for="timeRange">Time Range</label>
+          <select id="timeRange">
+            <option value="active">Active Alerts</option>
+            <option value="24h" selected>Last 24 Hours</option>
+            <option value="72h">Last 72 Hours</option>
+            <option value="7d">Last 7 Days</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="severityFilter">Minimum Severity</label>
+          <select id="severityFilter">
+            <option value="all">All Alerts</option>
+            <option value="moderate">Moderate+</option>
+            <option value="severe" selected>Severe+</option>
+            <option value="extreme">Extreme Only</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="eventFilter">Event Type</label>
+          <select id="eventFilter">
+            <option value="all">All Types</option>
+            <option value="hail">Hail</option>
+            <option value="wind">High Wind</option>
+            <option value="thunderstorm" selected>Severe Thunderstorm</option>
+            <option value="tornado">Tornado</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="fetchAlerts">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.65 2.35a8 8 0 1 0 .3 10.95M13.65 2.35V6m0-3.65H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Fetch Storm Data
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-heading">Filters</h2>
+        <div class="control-group">
+          <label for="incomeThreshold">Min Household Income</label>
+          <div class="input-with-unit">
+            <span class="unit-prefix">$</span>
+            <input type="number" id="incomeThreshold" value="75000" step="5000" min="0">
+          </div>
+        </div>
+        <div class="control-group">
+          <label for="propertyValueMin">Min Property Value</label>
+          <div class="input-with-unit">
+            <span class="unit-prefix">$</span>
+            <input type="number" id="propertyValueMin" value="250000" step="25000" min="0">
+          </div>
+        </div>
+        <div class="control-group checkbox-group">
+          <label>
+            <input type="checkbox" id="ownerOccupiedOnly" checked>
+            Owner-occupied only
+          </label>
+        </div>
+        <div class="control-group checkbox-group">
+          <label>
+            <input type="checkbox" id="showIncomeOverlay" checked>
+            Show income overlay
+          </label>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2 class="sidebar-heading">Results</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <span class="stat-value" id="statAlerts">—</span>
+            <span class="stat-label">Alerts</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="statTracts">—</span>
+            <span class="stat-label">Tracts</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="statParcels">—</span>
+            <span class="stat-label">Parcels</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="statLeads">—</span>
+            <span class="stat-label">Leads</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" id="exportCsv" disabled>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 10v2.667A1.334 1.334 0 0 1 12.667 14H3.333A1.334 1.334 0 0 1 2 12.667V10M4.667 6.667 8 10l3.333-3.333M8 10V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export Lead List (CSV)
+        </button>
+      </div>
+    </aside>
+
+    <!-- Map -->
+    <main class="map-container">
+      <div id="map"></div>
+      <!-- Lead detail panel (slides up from bottom) -->
+      <div class="lead-panel" id="leadPanel">
+        <div class="lead-panel-header">
+          <h3 id="leadPanelTitle">Select a parcel</h3>
+          <button class="lead-panel-close" id="leadPanelClose">&times;</button>
+        </div>
+        <div class="lead-panel-body" id="leadPanelBody">
+          <p class="lead-panel-empty">Click a highlighted parcel on the map to view details.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Alert list drawer (mobile) -->
+  <div class="alert-drawer" id="alertDrawer">
+    <div class="alert-drawer-header">
+      <h3>Storm Alerts</h3>
+      <button class="alert-drawer-close" id="alertDrawerClose">&times;</button>
+    </div>
+    <div class="alert-list" id="alertList"></div>
+  </div>
+
+  <!-- Mobile toggle for sidebar -->
+  <button class="mobile-sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/census.js"></script>
+  <script src="js/parcels.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
