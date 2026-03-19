@@ -15,6 +15,7 @@
     incomeData: null,
     tractBoundaries: null,
     scoredParcels: [],
+    displayedTracts: [],
     isLoading: false,
     censusLoaded: false,
     useDemoData: true // Use demo parcels until assessor proxy is configured
@@ -76,6 +77,11 @@
     dom.leadPanelBody = document.getElementById('leadPanelBody');
     dom.leadPanelClose = document.getElementById('leadPanelClose');
     dom.alertList = document.getElementById('alertList');
+    dom.summaryModal = document.getElementById('summaryModal');
+    dom.summaryModalOverlay = document.getElementById('summaryModalOverlay');
+    dom.summaryModalTitle = document.getElementById('summaryModalTitle');
+    dom.summaryModalBody = document.getElementById('summaryModalBody');
+    dom.summaryModalClose = document.getElementById('summaryModalClose');
   }
 
   function _bindEvents() {
@@ -89,6 +95,25 @@
     });
     dom.leadPanelClose.addEventListener('click', function() {
       dom.leadPanel.classList.remove('open');
+    });
+
+    // Stat tile click handlers
+    dom.summaryModalClose.addEventListener('click', _closeModal);
+    dom.summaryModalOverlay.addEventListener('click', function(e) {
+      if (e.target === dom.summaryModalOverlay) _closeModal();
+    });
+
+    document.getElementById('statAlerts').parentElement.addEventListener('click', function() {
+      _openModal('Storm Alerts', _buildAlertsModal());
+    });
+    document.getElementById('statTracts').parentElement.addEventListener('click', function() {
+      _openModal('Census Tracts — Income Overview', _buildTractsModal());
+    });
+    document.getElementById('statParcels').parentElement.addEventListener('click', function() {
+      _openModal('Parcels Analyzed', _buildParcelsModal());
+    });
+    document.getElementById('statLeads').parentElement.addEventListener('click', function() {
+      _openModal('Top Leads by Score', _buildLeadsModal());
     });
     dom.leadPanel.querySelector('.lead-panel-header').addEventListener('click', function(e) {
       if (e.target === dom.leadPanelClose) return;
@@ -118,6 +143,10 @@
     MapManager.clearAll();
 
     WeatherService.fetchAlertsByTimeRange(range)
+      .then(function(alerts) {
+        _setStatus('loading', 'Resolving zone boundaries…');
+        return WeatherService.resolveZoneGeometries(alerts);
+      })
       .then(function(alerts) {
         state.alerts = alerts;
 
@@ -185,6 +214,7 @@
 
     if (state.censusLoaded) {
       matchingTracts = CensusService.getTractsInBounds(bounds, incomeThreshold);
+      state.displayedTracts = matchingTracts;
       MapManager.addIncomeOverlay(matchingTracts);
       dom.statTracts.textContent = matchingTracts.length;
     }
@@ -408,6 +438,101 @@
       toast.style.transition = 'opacity 0.3s';
       setTimeout(function() { toast.remove(); }, 300);
     }, 4000);
+  }
+
+  function _openModal(title, html) {
+    if (!html) return;
+    dom.summaryModalTitle.textContent = title;
+    dom.summaryModalBody.innerHTML = html;
+    dom.summaryModalOverlay.classList.add('open');
+  }
+
+  function _closeModal() {
+    dom.summaryModalOverlay.classList.remove('open');
+  }
+
+  function _buildAlertsModal() {
+    if (!state.filteredAlerts.length) return '<p class="modal-empty">No alerts loaded. Fetch storm data first.</p>';
+    var zoneBased = state.filteredAlerts.filter(function(a) { return a.properties.isZoneBased; }).length;
+    var html = '<p class="modal-meta">' + state.filteredAlerts.length + ' alert(s) — ' +
+      zoneBased + ' zone-based, ' + (state.filteredAlerts.length - zoneBased) + ' polygon</p>';
+    html += '<table class="modal-table"><thead><tr>' +
+      '<th>Event</th><th>Severity</th><th>Onset</th><th>Area</th>' +
+      '</tr></thead><tbody>';
+    state.filteredAlerts.forEach(function(a) {
+      var p = a.properties;
+      html += '<tr>';
+      html += '<td>' + _escapeHtml(p.event) + (p.isZoneBased ? ' <span class="zone-tag">zone</span>' : '') + '</td>';
+      html += '<td><span class="severity-badge severity-' + p.severity + '">' + p.severity + '</span></td>';
+      html += '<td>' + WeatherService.formatAlertTime(p.onset) + '</td>';
+      html += '<td class="muted">' + _escapeHtml((p.areaDesc || '').substring(0, 80)) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function _buildTractsModal() {
+    if (!state.displayedTracts.length) return '<p class="modal-empty">No tract data. Analyze a storm first.</p>';
+    var sorted = state.displayedTracts.slice().sort(function(a, b) { return b.income - a.income; });
+    var html = '<p class="modal-meta">' + sorted.length + ' tracts within storm area above income threshold</p>';
+    html += '<table class="modal-table"><thead><tr>' +
+      '<th>Tract</th><th>Median Income</th><th>Population</th>' +
+      '</tr></thead><tbody>';
+    sorted.slice(0, 20).forEach(function(t) {
+      html += '<tr>';
+      html += '<td>' + _escapeHtml(t.tractId) + '</td>';
+      html += '<td>' + CensusService.formatIncome(t.income) + '</td>';
+      html += '<td>' + (t.population ? t.population.toLocaleString() : '—') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function _buildParcelsModal() {
+    if (!state.scoredParcels.length) return '<p class="modal-empty">No parcels. Analyze a storm first.</p>';
+    var parcels = state.scoredParcels.map(function(s) { return s.parcel; });
+    var avgValue = Math.round(parcels.reduce(function(sum, p) { return sum + (p.assessedValue || 0); }, 0) / parcels.length);
+    var ownerPct = Math.round(parcels.filter(function(p) { return p.isOwnerOccupied; }).length / parcels.length * 100);
+    var html = '<div class="modal-stats-row">';
+    html += '<div class="modal-stat"><span class="modal-stat-val">' + parcels.length + '</span><span class="modal-stat-lbl">Total Parcels</span></div>';
+    html += '<div class="modal-stat"><span class="modal-stat-val">' + ParcelService.formatValue(avgValue) + '</span><span class="modal-stat-lbl">Avg Assessed Value</span></div>';
+    html += '<div class="modal-stat"><span class="modal-stat-val">' + ownerPct + '%</span><span class="modal-stat-lbl">Owner-Occupied</span></div>';
+    html += '</div>';
+    html += '<table class="modal-table"><thead><tr>' +
+      '<th>Address</th><th>Value</th><th>Owner</th><th>Score</th>' +
+      '</tr></thead><tbody>';
+    state.scoredParcels.slice(0, 15).forEach(function(s) {
+      html += '<tr>';
+      html += '<td>' + _escapeHtml(s.parcel.propertyAddress.split(',')[0]) + '</td>';
+      html += '<td>' + ParcelService.formatValue(s.parcel.assessedValue) + '</td>';
+      html += '<td class="muted">' + _escapeHtml(s.parcel.ownerName || '—') + '</td>';
+      html += '<td><strong style="color:' + ScoringService.getScoreColor(s.score.total) + '">' + s.score.total + '</strong></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function _buildLeadsModal() {
+    var leads = state.scoredParcels.filter(function(s) { return s.score.total >= 50; });
+    if (!leads.length) return '<p class="modal-empty">No leads scored 50+. Analyze a storm first.</p>';
+    leads = leads.slice().sort(function(a, b) { return b.score.total - a.score.total; });
+    var html = '<p class="modal-meta">' + leads.length + ' leads scored 50 or above — sorted by score</p>';
+    html += '<table class="modal-table"><thead><tr>' +
+      '<th>Address</th><th>Score</th><th>Assessed Value</th><th>Owner</th>' +
+      '</tr></thead><tbody>';
+    leads.slice(0, 20).forEach(function(s) {
+      html += '<tr>';
+      html += '<td>' + _escapeHtml(s.parcel.propertyAddress.split(',')[0]) + '</td>';
+      html += '<td><strong style="color:' + ScoringService.getScoreColor(s.score.total) + '">' + s.score.total + '/100</strong></td>';
+      html += '<td>' + ParcelService.formatValue(s.parcel.assessedValue) + '</td>';
+      html += '<td class="muted">' + _escapeHtml(s.parcel.ownerName || '—') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
   }
 
   function _escapeHtml(str) {

@@ -119,7 +119,9 @@ var WeatherService = (function() {
         areaDesc: props.areaDesc,
         hailSize: hailSize,
         windSpeed: windSpeed,
-        instruction: props.instruction
+        instruction: props.instruction,
+        affectedZones: props.affectedZones || [],
+        isZoneBased: !feature.geometry
       }
     };
   }
@@ -169,12 +171,47 @@ var WeatherService = (function() {
     });
   }
 
+  /**
+   * For zone-based alerts (no polygon geometry), fetch zone boundaries from NWS
+   * and attach geometry so they can be drawn on the map.
+   */
+  function resolveZoneGeometries(alerts) {
+    var promises = alerts.map(function(alert) {
+      if (alert.geometry || !alert.properties.affectedZones.length) {
+        return Promise.resolve(alert);
+      }
+
+      // Fetch up to 4 zones per alert in parallel
+      var zoneFetches = alert.properties.affectedZones.slice(0, 4).map(function(zoneUrl) {
+        return fetch(zoneUrl + '?geometry=true', { headers: headers })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .catch(function() { return null; });
+      });
+
+      return Promise.all(zoneFetches).then(function(results) {
+        var geometries = results
+          .filter(function(r) { return r && r.geometry; })
+          .map(function(r) { return r.geometry; });
+
+        if (geometries.length === 1) {
+          alert.geometry = geometries[0];
+        } else if (geometries.length > 1) {
+          alert.geometry = { type: 'GeometryCollection', geometries: geometries };
+        }
+        return alert;
+      });
+    });
+
+    return Promise.all(promises);
+  }
+
   return {
     fetchActiveAlerts: fetchActiveAlerts,
     fetchAlertsByTimeRange: fetchAlertsByTimeRange,
     filterBySeverity: filterBySeverity,
     filterByEventType: filterByEventType,
     severityRank: severityRank,
-    formatAlertTime: formatAlertTime
+    formatAlertTime: formatAlertTime,
+    resolveZoneGeometries: resolveZoneGeometries
   };
 })();

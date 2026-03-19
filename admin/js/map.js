@@ -63,16 +63,17 @@ var MapManager = (function() {
       if (!alert.geometry) return;
 
       var severity = alert.properties.severity;
+      var isZoneBased = alert.properties.isZoneBased;
       var color = StormConfig.severityColors[severity] || StormConfig.severityColors.unknown;
 
       var geoJsonLayer = L.geoJSON(alert.geometry, {
         style: {
           color: color,
-          weight: 2,
-          opacity: 0.8,
+          weight: isZoneBased ? 1.5 : 2,
+          opacity: isZoneBased ? 0.5 : 0.8,
           fillColor: color,
-          fillOpacity: 0.15,
-          dashArray: severity === 'extreme' ? null : '5, 5'
+          fillOpacity: isZoneBased ? 0.06 : 0.15,
+          dashArray: isZoneBased ? '8, 6' : (severity === 'extreme' ? null : '5, 5')
         }
       });
 
