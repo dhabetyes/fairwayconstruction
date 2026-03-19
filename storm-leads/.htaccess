@@ -1,0 +1,16 @@
+# Password-protect the storm leads tool (internal use only)
+AuthType Basic
+AuthName "Fairway Construction — Internal Tools"
+# Update this path to match your cPanel username, e.g. /home/yourusername/.htpasswd
+AuthUserFile /home/.htpasswd
+Require valid-user
+
+# Prevent directory listing
+Options -Indexes
+
+# Cache static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
