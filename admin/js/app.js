@@ -18,7 +18,7 @@
     displayedTracts: [],
     isLoading: false,
     censusLoaded: false,
-    useDemoData: true // Use demo parcels until assessor proxy is configured
+    useDemoData: false
   };
 
   // DOM references

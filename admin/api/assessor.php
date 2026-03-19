@@ -22,10 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 // Maricopa County Assessor API base URL
-// Note: The public API requires a token. Contact AssessorDataSales@maricopa.gov
-// For now, this proxy returns structured error messages when no token is configured.
 define('ASSESSOR_API_BASE', 'https://api.mcassessor.maricopa.gov');
-define('ASSESSOR_API_TOKEN', ''); // Set your API token here
+
+// Load API token from config file (never committed to git)
+$_configFile = __DIR__ . '/assessor_config.php';
+if (file_exists($_configFile)) {
+    require_once $_configFile;
+} else {
+    define('ASSESSOR_API_TOKEN', '');
+}
 
 $action = isset($_GET['action']) ? trim($_GET['action']) : '';
 
