@@ -1,5 +1,10 @@
 ---
 deployment:
   tasks:
+    # Deploy main site to public_html
     - export DEPLOYPATH=/home/$USER/public_html
-    - /bin/cp -R $REPOSITORY_ROOT/. $DEPLOYPATH
+    - /bin/cp index.html contact.php $DEPLOYPATH/
+    - /bin/cp -R css js public $DEPLOYPATH/
+    # Deploy storm leads tool to subdomain document root
+    - /bin/mkdir -p /home/$USER/leads
+    - /bin/cp -R $REPOSITORY_ROOT/storm-leads/. /home/$USER/leads
