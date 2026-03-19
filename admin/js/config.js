@@ -56,17 +56,8 @@ var StormConfig = (function() {
       unknown: '#8b90a8'
     },
 
-    // NWS event types relevant to roofing
-    relevantEvents: [
-      'Severe Thunderstorm Warning',
-      'Severe Thunderstorm Watch',
-      'Tornado Warning',
-      'Tornado Watch',
-      'High Wind Warning',
-      'Wind Advisory',
-      'Dust Storm Warning',
-      'Extreme Wind Warning'
-    ],
+    // Keywords matched against NWS event names (case-insensitive)
+    relevantKeywords: ['wind', 'hail', 'storm', 'thunderstorm', 'tornado'],
 
     // Hail size thresholds (inches)
     hailThresholds: {

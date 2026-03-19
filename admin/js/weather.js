@@ -61,11 +61,11 @@ var WeatherService = (function() {
         return response.json();
       })
       .then(function(geojson) {
-        // Filter to relevant storm event types
+        // Filter to events containing any relevant keyword
         var features = (geojson.features || []).filter(function(f) {
-          var event = f.properties.event || '';
-          return StormConfig.relevantEvents.some(function(re) {
-            return event.indexOf(re) !== -1 || re.indexOf(event) !== -1;
+          var event = (f.properties.event || '').toLowerCase();
+          return StormConfig.relevantKeywords.some(function(kw) {
+            return event.indexOf(kw) !== -1;
           });
         });
 
