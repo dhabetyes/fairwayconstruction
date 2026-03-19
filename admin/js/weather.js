@@ -146,20 +146,11 @@ var WeatherService = (function() {
   /**
    * Filter alerts by event type keyword
    */
-  function filterByEventType(alerts, eventType) {
-    if (eventType === 'all') return alerts;
-
-    var keywords = {
-      hail: ['hail'],
-      wind: ['wind'],
-      thunderstorm: ['thunderstorm'],
-      tornado: ['tornado']
-    };
-
-    var kws = keywords[eventType] || [eventType];
+  function filterByEventType(alerts, eventTypes) {
+    if (!eventTypes || eventTypes.length === 0) return alerts;
     return alerts.filter(function(a) {
       var event = (a.properties.event || '').toLowerCase();
-      return kws.some(function(kw) {
+      return eventTypes.some(function(kw) {
         return event.indexOf(kw) !== -1;
       });
     });

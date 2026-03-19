@@ -169,10 +169,27 @@ body {
   cursor: pointer;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type="checkbox"],
+.checkbox-item input[type="checkbox"] {
   accent-color: var(--primary);
   width: 16px;
   height: 16px;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
 }
 
 select, input[type="number"] {

@@ -110,7 +110,8 @@
   function _handleFetchAlerts() {
     var range = dom.timeRange.value;
     var severity = dom.severityFilter.value;
-    var eventType = dom.eventFilter.value;
+    var eventTypes = Array.from(dom.eventFilter.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(function(cb) { return cb.value; });
 
     _setStatus('loading', 'Fetching storm data…');
     dom.fetchBtn.disabled = true;
@@ -122,7 +123,7 @@
 
         // Apply filters
         var filtered = WeatherService.filterBySeverity(alerts, severity);
-        filtered = WeatherService.filterByEventType(filtered, eventType);
+        filtered = WeatherService.filterByEventType(filtered, eventTypes);
         state.filteredAlerts = filtered;
 
         // Update stats

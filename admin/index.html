@@ -47,14 +47,14 @@
           </select>
         </div>
         <div class="control-group">
-          <label for="eventFilter">Event Type</label>
-          <select id="eventFilter">
-            <option value="all">All Types</option>
-            <option value="hail">Hail</option>
-            <option value="wind">High Wind</option>
-            <option value="thunderstorm" selected>Severe Thunderstorm</option>
-            <option value="tornado">Tornado</option>
-          </select>
+          <label>Event Types</label>
+          <div class="checkbox-list" id="eventFilter">
+            <label class="checkbox-item"><input type="checkbox" value="wind" checked> Wind</label>
+            <label class="checkbox-item"><input type="checkbox" value="hail" checked> Hail</label>
+            <label class="checkbox-item"><input type="checkbox" value="storm" checked> Storm</label>
+            <label class="checkbox-item"><input type="checkbox" value="thunderstorm" checked> Thunderstorm</label>
+            <label class="checkbox-item"><input type="checkbox" value="tornado" checked> Tornado</label>
+          </div>
         </div>
         <button class="btn btn-primary" id="fetchAlerts">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.65 2.35a8 8 0 1 0 .3 10.95M13.65 2.35V6m0-3.65H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
