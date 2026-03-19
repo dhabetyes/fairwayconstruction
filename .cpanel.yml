@@ -5,6 +5,6 @@ deployment:
     - export DEPLOYPATH=/home/$USER/public_html
     - /bin/cp index.html contact.php $DEPLOYPATH/
     - /bin/cp -R css js public $DEPLOYPATH/
-    # Deploy storm leads tool to subdomain document root
-    - /bin/mkdir -p /home/$USER/leads
-    - /bin/cp -R $REPOSITORY_ROOT/storm-leads/. /home/$USER/leads
+    # Deploy storm leads tool to /admin path (password-protected)
+    - /bin/mkdir -p $DEPLOYPATH/admin
+    - /bin/cp -R $REPOSITORY_ROOT/storm-leads/. $DEPLOYPATH/admin
